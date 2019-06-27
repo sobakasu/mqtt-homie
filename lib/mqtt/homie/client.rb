@@ -106,7 +106,9 @@ module MQTT
       def run_statistics
         while !Thread.current[:done]
           publish_statistics
-          sleep @device.stats.interval
+
+          # halve interval, if we miss a notification then we will be marked as offline
+          sleep @device.stats.interval / 2
         end
         debug("statistics thread exiting")
       end

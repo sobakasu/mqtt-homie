@@ -1,3 +1,5 @@
+require "macaddr"
+
 module MQTT
   module Homie
     module Network
@@ -7,7 +9,7 @@ module MQTT
       end
 
       def default_mac
-        (default_interface ? default_interface[:hwaddr] : nil) || "00:00:00:00:00:00"
+        (default_interface ? default_interface[:hwaddr] : nil) || Mac.addr
       end
 
       def default_interface

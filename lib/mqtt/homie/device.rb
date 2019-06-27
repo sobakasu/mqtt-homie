@@ -1,4 +1,5 @@
 require "sys/uname"
+require "socket"
 
 module MQTT
   module Homie
@@ -12,16 +13,17 @@ module MQTT
 
       def initialize(options = {})
         super(options)
-        @name = options[:name]
-        @start_time = Time.now
-        @interval = set(options, :interval, default: DEFAULT_STAT_REFRESH)
-        @nodes = set(options, :nodes, data_type: Array, default: [])
+        @boot_time = Time.now
         @state = :init
-        @localip = set(options, :localip, default: default_localip)
-        @mac = set(options, :mac, default: default_mac)
+
+        @name = set(options, :name, required: true)
+        @interval = set(options, :interval, default: DEFAULT_STAT_REFRESH, required: true)
+        @nodes = set(options, :nodes, data_type: Array, default: [])
+        @localip = set(options, :localip, default: default_localip, required: true)
+        @mac = set(options, :mac, default: default_mac, required: true)
         @implementation = set(options, :implementation, default: DEFAULT_IMPLEMENTATION)
-        @fw_name = set(options, :fw_name, default: default_fw_name)
-        @fw_version = set(options, :fw_version, default: default_fw_version)
+        @fw_name = set(options, :fw_name, default: default_fw_name, required: true)
+        @fw_version = set(options, :fw_version, default: default_fw_version, required: true)
       end
 
       def topic
@@ -40,11 +42,11 @@ module MQTT
           "$name" => @name,
           "$localip" => @localip,
           "$mac" => @mac,
-          "$fw/name" => @fw_name || "mqtt-homie",
-          "$fw/version" => @fw_version || MQTT::Homie::VERSION,
+          "$fw/name" => @fw_name,
+          "$fw/version" => @fw_version,
           "$nodes" => @nodes.collect { |i| i.id }.join(","),
           "$implementation" => @implementation,
-          "$state" => @state.to_s,
+          "$state" => @state,
         }
         @nodes.each do |node|
           node.homie_attributes.each do |k, v|
@@ -58,7 +60,7 @@ module MQTT
       # homie/device_id/$stats
       def statistics
         {
-          "uptime" => (Time.now - @start_time).to_i,
+          "uptime" => (Time.now - @boot_time).to_i,
           #"signal" => 100,  # TODO wifi signal strength
           #"cputemp" => 0,
           #"cpuload" => stats.load_average.one_minute,
@@ -69,16 +71,12 @@ module MQTT
         }
       end
 
-      def update(time, node)
-        # node value updated
-      end
-
       def default_localip
-        nil # TODO
+        default_interface[:addresses][0] if default_interface
       end
 
       def default_mac
-        nil # TODO
+        (default_interface ? default_interface[:hwaddr] : nil) || "00:00:00:00:00:00"
       end
 
       def default_fw_name
@@ -91,6 +89,28 @@ module MQTT
 
       def uname
         @uname ||= Sys::Uname.uname
+      end
+
+      def default_interface
+        @default_interface ||= interfaces.values.find { |i| i[:default] }
+      end
+
+      def interfaces
+        @interfaces ||= begin
+          interfaces = {}
+          found = false
+          Socket.getifaddrs.each do |ifaddr|
+            ifname = ifaddr.name
+            data = interfaces[ifname] ||= { addresses: [] }
+            next unless addr = ifaddr.addr
+            data[:addresses].push addr if (addr.ipv4? || addr.ipv6?) && !(addr.ipv4_loopback? || addr.ipv6_loopback?)
+            data[:hwaddr] = $1 if addr.inspect.match(/hwaddr=([0-9a-fA-F:]+)/)  # doesn't work on windows
+            data[:default] = true unless found
+            data[:name] = ifname
+            found = true
+          end
+          interfaces
+        end
       end
     end
   end

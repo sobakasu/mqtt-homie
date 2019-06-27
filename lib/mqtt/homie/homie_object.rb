@@ -15,7 +15,7 @@ module MQTT
       end
 
       def homie_attributes
-        data = {}
+        {}
       end
 
       private
@@ -28,6 +28,7 @@ module MQTT
         value = options.include?(name) ? options[name] : default
         raise "#{name} is required for #{object_type} #{@id}" if required && value.nil?
         raise "expected #{name} to be a #{data_type} for #{object_type} #{@id}" if data_type && !value.kind_of?(data_type)
+        raise "expected #{name} (#{value}) to be one of #{enum.join(",")}" if enum.kind_of?(Array) && !value.nil? && !enum.include?(value.to_sym)
         value
       end
 

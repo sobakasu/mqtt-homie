@@ -18,7 +18,7 @@ RSpec.describe MQTT::Homie::Device do
     it "includes node attributes" do
       property = MQTT::Homie::Property.new(id: "prop", datatype: "string", name: "test property")
       node = MQTT::Homie::Node.new(id: "node", name: "node", type: "node", properties: [property])
-      device = described_class.new(id: "device", nodes: [node])
+      device = described_class.new(id: "device", name: "Device", nodes: [node])
 
       data = device.homie_attributes
       #p data

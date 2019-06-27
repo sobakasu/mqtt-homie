@@ -1,7 +1,7 @@
 RSpec.describe MQTT::Homie::DeviceBuilder do
   context "build" do
     it "creates a device" do
-      device = described_class.new(id: "device").
+      device = described_class.new(id: "device", name: "Device").
         node(id: "node", name: "node", type: "test")
         .property(id: "prop1", enum: [:value1, :value2])
         .property(id: "prop2", datatype: :integer, unit: "%")

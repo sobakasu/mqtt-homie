@@ -1,8 +1,9 @@
-# Mqtt::Homie
+# MQTT::Homie
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/mqtt/homie`. To experiment with that code, run `bin/console` for an interactive prompt.
+A ruby interface for creating a device conforming to the MQTT [Homie] convention.
+This gem builds upon the [ruby-mqtt] ruby gem.
 
-TODO: Delete this and the text above, and describe your gem
+The [Homie] convention defines a standardized way of how IoT devices and services announce themselves and their data to a MQTT broker.
 
 ## Installation
 
@@ -20,19 +21,37 @@ Or install it yourself as:
 
     $ gem install mqtt-homie
 
-## Usage
+## Quick Start
 
-TODO: Write usage instructions here
+~~~ ruby
+require 'rubygems'
+require 'mqtt/homie'
 
-## Development
+# Set up a device, with a node and properties
+device = MQTT::Homie.device_builder(id: 'device', name: 'Device'
+        localip: '192.168.1.1',
+        mac: '80:1f:02:cc:15:dd'
+      ).node(id: "gate", name: "Front gate", type: "Gate")
+        .property(id: "state", name: "Gate state", enum: [:open, :closed, :opening, :closing], value: :closed)
+        .property(id: "position", name: "Gate position", datatype: :integer, unit: "%", value: 0)
+        .property(id: "command", name: "Send gate command", settable: true, enum: [:open, :close]).build
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+# Create a client and connect to a MQTT broker
+client = MQTT::Homie::Client.new(device: device, host: 'localhost')
+client.connect
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+# access nodes and properties of the device
+node = device.node('gate')
+state = node.property('state')
+state.value = :open  # publishes new state to MQTT
 
-## Contributing
+# listen for changes to properties via the Observer interface
+node.property('command').add_observer(self)
+~~~
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/mqtt-homie. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+## Overview
+
+TODO
 
 ## License
 
@@ -40,4 +59,10 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the Mqtt::Homie project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/mqtt-homie/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the Mqtt::Homie project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/mqtt-homie/blob/master/CODE_OF_CONDUCT.md).
+
+
+
+[Homie]: https://homieiot.github.io/
+[MQTT]:  http://www.mqtt.org/
+[ruby-mqtt]: https://github.com/njh/ruby-mqtt

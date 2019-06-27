@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors = ["Andrew Williams"]
   spec.email = ["sobakasu@gmail.com"]
 
-  spec.summary = %q{A pure ruby interface for creating a device conforming to the MQTT Homie convention.}
+  spec.summary = %q{A ruby interface for creating a device conforming to the MQTT Homie convention.}
   spec.homepage = "https://github.com/sobakasu/mqtt-homie"
   spec.license = "MIT"
 
-  spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
+  spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/sobakasu/mqtt-homie"

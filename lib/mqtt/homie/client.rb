@@ -106,7 +106,7 @@ module MQTT
       def run_statistics
         while !Thread.current[:done]
           publish_statistics
-          sleep @device.interval
+          sleep @device.stats.interval
         end
         debug("statistics thread exiting")
       end
@@ -121,7 +121,7 @@ module MQTT
       end
 
       def publish_statistics
-        publish(@device.statistics, topic + "/$stats")
+        publish(@device.stats, topic + "/$stats")
       end
 
       def publish_property_value(property)

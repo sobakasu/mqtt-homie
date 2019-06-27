@@ -7,31 +7,32 @@ module MQTT
 
       DATA_TYPES = [:integer, :float, :boolean, :string, :enum, :color]
 
-      attr_reader :id, :name, :settable, :datatype, :unit, :retained, :format
+      homie_id
+      homie_attr :name, default: ""
+      homie_attr :settable, default: false, datatype: :boolean
+      homie_attr :retained, default: true, datatype: :boolean
+      homie_attr :datatype, default: :string, enum: DATA_TYPES, datatype: Symbol
+      homie_attr :unit, default: ""
+      homie_attr :format, required: lambda { |i| [:enum, :color].include?(i.datatype) }
+
       attr_reader :value
 
       def initialize(options = {})
-        super(options)
-
         options = options.dup
 
         # enum shortcut
         if enum = options.delete(:enum)
           options[:datatype] = :enum
-          options[:format] = enum.collect { |i| i.to_s }.join(',')
+          options[:format] = enum.collect { |i| i.to_s }.join(",")
         end
 
-        @name = set(options, :name, default: "")
-        @settable = !!set(options, :settable, default: false)
-        @retained = !!set(options, :retained, default: true)
-        @datatype = set(options, :datatype, default: :string, enum: DATA_TYPES).to_sym
-        @unit = set(options, :unit, default: "")
-        @format = set(options, :format, required: [:enum, :color].include?(@datatype))
+        super(options)
+
         @value = options[:value]
       end
 
       def value=(value)
-        # TODO: check value conforms to expected datatype and format
+        # TODO: check value conforms to expected datatype and format?
         if value != @value
           @value = value
           changed
@@ -41,18 +42,6 @@ module MQTT
 
       def settable?
         @settable
-      end
-
-      def homie_attributes
-        data = {
-          "$name" => @name,
-          "$settable" => @settable,
-          "$datatype" => @datatype,
-          "$unit" => @unit,
-          "$format" => @format,
-          "$retained" => @retained,
-        }
-        data
       end
     end
   end

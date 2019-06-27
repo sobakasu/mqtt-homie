@@ -28,13 +28,11 @@ require 'rubygems'
 require 'mqtt/homie'
 
 # Set up a device, with a node and properties
-device = MQTT::Homie.device_builder(id: 'device', name: 'Device'
-        localip: '192.168.1.1',
-        mac: '80:1f:02:cc:15:dd'
-      ).node(id: "gate", name: "Front gate", type: "Gate")
-        .property(id: "state", name: "Gate state", enum: [:open, :closed, :opening, :closing], value: :closed)
-        .property(id: "position", name: "Gate position", datatype: :integer, unit: "%", value: 0)
-        .property(id: "command", name: "Send gate command", settable: true, enum: [:open, :close]).build
+device = MQTT::Homie.device_builder(id: 'device', name: 'Device')
+  .node(id: "gate", name: "Front gate", type: "Gate")
+  .property(id: "state", name: "Gate state", enum: [:open, :closed, :opening, :closing], value: :closed)
+  .property(id: "position", name: "Gate position", datatype: :integer, unit: "%", value: 0)
+  .property(id: "command", name: "Send gate command", settable: true, enum: [:open, :close]).build
 
 # Create a client and connect to a MQTT broker
 client = MQTT::Homie::Client.new(device: device, host: 'localhost')

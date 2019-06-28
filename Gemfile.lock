@@ -33,6 +33,7 @@ GEM
     systemu (2.6.5)
 
 PLATFORMS
+  ruby
   x64-mingw32
 
 DEPENDENCIES

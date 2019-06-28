@@ -10,7 +10,7 @@ module MQTT
 
       HOMIE_VERSION = "3.0.1"
       DEFAULT_STAT_REFRESH = 60  # seconds
-      DEFAULT_IMPLEMENTATION = "mqtt-homie"
+      DEFAULT_IMPLEMENTATION = "mqtt-homie-#{VERSION}"
 
       class Firmware < HomieObject
         class << self

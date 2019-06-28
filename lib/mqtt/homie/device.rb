@@ -49,6 +49,7 @@ module MQTT
       end
 
       attr_reader :fw, :stats
+      attr_accessor :use_stats, :use_fw
 
       homie_id
       homie_attr :name, required: true
@@ -62,6 +63,9 @@ module MQTT
         super(options)
         @stats = Statistics.new(options)
         @fw = Firmware.new(subhash(options, "fw_"))
+
+        @use_stats = options.include?(:use_stats) ? options[:use_stats] : true
+        @use_fw = options.include?(:use_fw) ? options[:use_fw] : true
       end
 
       def node(id)
@@ -73,9 +77,13 @@ module MQTT
       def homie_attributes
         data = super.merge({
           "$homie" => HOMIE_VERSION,
+        })
+
+        data.merge!({
           "$fw/name" => @fw.name,
           "$fw/version" => @fw.version,
-        })
+        }) if @use_fw
+
         @nodes.each do |node|
           node.homie_attributes.each do |k, v|
             data[node.topic + "/" + k] = v

@@ -24,11 +24,13 @@ module MQTT
             ifname = ifaddr.name
             data = interfaces[ifname] ||= { addresses: [] }
             next unless addr = ifaddr.addr
-            data[:addresses].push addr if (addr.ipv4? || addr.ipv6?) && usable_address?(addr)
-            data[:hwaddr] = $1 if addr.inspect.match(/hwaddr=([0-9a-fA-F:]+)/)  # doesn't work on windows
-            data[:default] = true unless found
             data[:name] = ifname
-            found = true
+            data[:hwaddr] = $1 if addr.inspect.match(/hwaddr=([0-9a-fA-F:]+)/)  # doesn't work on windows
+            if (addr.ipv4? || addr.ipv6?) && usable_address?(addr)
+              data[:addresses].push addr
+              data[:default] = true unless found
+              found = true
+            end
           end
           interfaces
         end

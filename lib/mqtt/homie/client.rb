@@ -12,7 +12,16 @@ module MQTT
         @device = options[:device]
         @host = options[:host]
         @root_topic = options[:root_topic] || DEFAULT_ROOT_TOPIC
+
         raise "device required" unless @device
+
+        # next version of homie doesn't use stats or firmware details
+        @use_stats = true
+        if options[:develop]
+          @device.use_stats = false
+          @device.use_fw = false
+          @use_stats = false
+        end
 
         # observe all node properties so we can publish values when they change
         @device.nodes.each do |node|
@@ -30,12 +39,12 @@ module MQTT
         @client.connect
 
         publish(@device, topic)
-        publish_statistics
+        publish_statistics if @use_stats
 
         @threads = []
 
         # run a thread to publish statistics
-        @threads << Thread.new { run_statistics }
+        @threads << Thread.new { run_statistics } if @use_stats
 
         # run a thread to listen for settings
         @threads << Thread.new { run_set_listener }
@@ -106,7 +115,9 @@ module MQTT
       def run_statistics
         while !Thread.current[:done]
           publish_statistics
-          sleep @device.interval
+
+          # halve interval, if we miss a notification then we will be marked as offline
+          sleep @device.stats.interval / 2
         end
         debug("statistics thread exiting")
       end
@@ -121,7 +132,7 @@ module MQTT
       end
 
       def publish_statistics
-        publish(@device.statistics, topic + "/$stats")
+        publish(@device.stats, topic + "/$stats")
       end
 
       def publish_property_value(property)

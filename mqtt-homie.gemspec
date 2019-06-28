@@ -33,4 +33,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "mqtt", "~> 0.5"
   spec.add_dependency "sys-uname", "~> 1.0"
+  spec.add_dependency "macaddr", "~> 1.1"
 end

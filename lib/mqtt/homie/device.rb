@@ -1,31 +1,71 @@
 require "sys/uname"
+require "socket"
 
 module MQTT
   module Homie
     class Device < HomieObject
+      class << self
+        include Network
+      end
+
       HOMIE_VERSION = "3.0.1"
       DEFAULT_STAT_REFRESH = 60  # seconds
-      DEFAULT_IMPLEMENTATION = "mqtt-homie"
+      DEFAULT_IMPLEMENTATION = "mqtt-homie-#{VERSION}"
 
-      attr_reader :nodes, :id, :mac, :fw_name, :fw_version, :name, :implementation, :interval
-      attr_accessor :state
+      class Firmware < HomieObject
+        class << self
+          def default_fw_name
+            uname.sysname rescue uname.caption rescue "Unknown"
+          end
+
+          def default_fw_version
+            uname.release rescue uname.build_number rescue "Unknown"
+          end
+
+          def uname
+            @uname ||= Sys::Uname.uname
+          end
+        end
+
+        homie_attr :name, default: default_fw_name, required: true
+        homie_attr :version, default: default_fw_version, required: true
+      end
+
+      # statistics should be sent every interval seconds
+      # homie/device_id/$stats
+      class Statistics < HomieObject
+        homie_attr :interval, required: true, default: 60
+        homie_attr :boot_time, default: lambda { |i| Time.now }, hidden: true
+        homie_attr :signal, datatype: Integer
+        homie_attr :cputemp, datatype: Integer
+        homie_attr :cpuload, datatype: Float
+        homie_attr :battery, datatype: Integer
+        homie_attr :freeheap, datatype: Integer
+        homie_attr :supply, datatype: Float
+
+        def homie_attributes
+          super.merge("uptime" => (Time.now - @boot_time).to_i)
+        end
+      end
+
+      attr_reader :fw, :stats
+      attr_accessor :use_stats, :use_fw
+
+      homie_id
+      homie_attr :name, required: true
+      homie_attr :state, default: :init, required: true
+      homie_attr :nodes, datatype: Array, default: [], immutable: true
+      homie_attr :localip, default: default_localip, required: true
+      homie_attr :mac, default: default_mac, required: true
+      homie_attr :implementation, default: DEFAULT_IMPLEMENTATION
 
       def initialize(options = {})
         super(options)
-        @name = options[:name]
-        @start_time = Time.now
-        @interval = set(options, :interval, default: DEFAULT_STAT_REFRESH)
-        @nodes = set(options, :nodes, data_type: Array, default: [])
-        @state = :init
-        @localip = set(options, :localip, default: default_localip)
-        @mac = set(options, :mac, default: default_mac)
-        @implementation = set(options, :implementation, default: DEFAULT_IMPLEMENTATION)
-        @fw_name = set(options, :fw_name, default: default_fw_name)
-        @fw_version = set(options, :fw_version, default: default_fw_version)
-      end
+        @stats = Statistics.new(options)
+        @fw = Firmware.new(subhash(options, "fw_"))
 
-      def topic
-        @id
+        @use_stats = options.include?(:use_stats) ? options[:use_stats] : true
+        @use_fw = options.include?(:use_fw) ? options[:use_fw] : true
       end
 
       def node(id)
@@ -35,17 +75,15 @@ module MQTT
       # device attributes must be sent when connection to broker is established or re-established
       # homie/device_id/
       def homie_attributes
-        data = {
+        data = super.merge({
           "$homie" => HOMIE_VERSION,
-          "$name" => @name,
-          "$localip" => @localip,
-          "$mac" => @mac,
-          "$fw/name" => @fw_name || "mqtt-homie",
-          "$fw/version" => @fw_version || MQTT::Homie::VERSION,
-          "$nodes" => @nodes.collect { |i| i.id }.join(","),
-          "$implementation" => @implementation,
-          "$state" => @state.to_s,
-        }
+        })
+
+        data.merge!({
+          "$fw/name" => @fw.name,
+          "$fw/version" => @fw.version,
+        }) if @use_fw
+
         @nodes.each do |node|
           node.homie_attributes.each do |k, v|
             data[node.topic + "/" + k] = v
@@ -54,43 +92,16 @@ module MQTT
         data
       end
 
-      # statistics should be sent every INTERVAL seconds
-      # homie/device_id/$stats
-      def statistics
-        {
-          "uptime" => (Time.now - @start_time).to_i,
-          #"signal" => 100,  # TODO wifi signal strength
-          #"cputemp" => 0,
-          #"cpuload" => stats.load_average.one_minute,
-          #"battery" => 100,
-          #"freeheap" => stats.memory.free,
-          #"supply" => 5,
-          "interval" => @interval * 2,
-        }
-      end
+      private
 
-      def update(time, node)
-        # node value updated
-      end
-
-      def default_localip
-        nil # TODO
-      end
-
-      def default_mac
-        nil # TODO
-      end
-
-      def default_fw_name
-        uname.sysname rescue uname.caption rescue "Unknown"
-      end
-
-      def default_fw_version
-        uname.release rescue uname.build_number rescue "Unknown"
-      end
-
-      def uname
-        @uname ||= Sys::Uname.uname
+      def subhash(data, prefix)
+        result = {}
+        data.each do |key, value|
+          next unless key.to_s.start_with?(prefix)
+          key = key.to_s.sub(/^#{prefix}/, "")
+          result[key.to_sym] = value
+        end
+        result
       end
     end
   end

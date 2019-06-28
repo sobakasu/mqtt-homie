@@ -19,7 +19,9 @@ module MQTT
   end
 end
 
+require "mqtt/homie/homie_attribute"
 require "mqtt/homie/homie_object"
+require "mqtt/homie/network"
 require "mqtt/homie/property"
 require "mqtt/homie/node"
 require "mqtt/homie/device"

@@ -16,7 +16,7 @@ RSpec.describe MQTT::Homie::Node do
     end
 
     it "includes property attributes" do
-      property = MQTT::Homie::Property.new(id: "prop", datatype: "string", name: "test property")
+      property = MQTT::Homie::Property.new(id: "prop", datatype: :string, name: "test property")
       node = described_class.new(id: "test", name: "test", type: "test", properties: [property])
       data = node.homie_attributes
       #p data

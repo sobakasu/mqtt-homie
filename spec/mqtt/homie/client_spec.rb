@@ -45,6 +45,7 @@ RSpec.describe MQTT::Homie::Client do
     expect(mqtt_client).to receive(:connect)
     allow(mqtt_client).to receive(:disconnect)
     allow(mqtt_client).to receive(:publish)
+    allow(mqtt_client).to receive(:subscribe)
     allow(mqtt_client).to receive(:get)
 
     device = MQTT::Homie.device_builder(id: "device", name: "Device").node(id: "node", name: "node", type: "node").

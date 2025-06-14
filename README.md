@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/sobakasu/mqtt-homie.svg?branch=develop)](https://travis-ci.com/sobakasu/mqtt-homie)
-
 # MQTT::Homie
 
 A ruby interface for creating a device conforming to the MQTT [Homie] convention.

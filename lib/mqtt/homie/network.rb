@@ -13,23 +13,22 @@ module MQTT
       end
 
       def default_interface
-        @default_interface ||= interfaces.values.find { |i| i[:default] }
+        @default_interface ||= interfaces.values.first
       end
 
       def interfaces
         @interfaces ||= begin
           interfaces = {}
-          found = false
           Socket.getifaddrs.each do |ifaddr|
             ifname = ifaddr.name
-            data = interfaces[ifname] ||= { addresses: [] }
+            next if ifname == "lo"
             next unless addr = ifaddr.addr
+
+            data = interfaces[ifname] ||= { addresses: [] }
             data[:name] = ifname
             data[:hwaddr] = $1 if addr.inspect.match(/hwaddr=([0-9a-fA-F:]+)/)  # doesn't work on windows
             if (addr.ipv4? || addr.ipv6?) && usable_address?(addr)
               data[:addresses].push addr
-              data[:default] = true unless found
-              found = true
             end
           end
           interfaces
